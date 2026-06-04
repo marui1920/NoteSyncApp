@@ -1,4 +1,4 @@
-import {useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {
   FlatList,
   Pressable,
@@ -16,9 +16,16 @@ export function NotesScreen() {
   const insets = useSafeAreaInsets();
   const [title, setTitle] = useState('');
   const notes = useNotesStore(state => state.notes);
+  const syncStatus = useNotesStore(state => state.syncStatus);
+  const syncError = useNotesStore(state => state.syncError);
+  const loadNotes = useNotesStore(state => state.loadNotes);
   const addNote = useNotesStore(state => state.addNote);
   const toggleNote = useNotesStore(state => state.toggleNote);
   const deleteNote = useNotesStore(state => state.deleteNote);
+
+  useEffect(() => {
+    loadNotes();
+  }, [loadNotes]);
 
   const visibleNotes = useMemo(
     () => notes.filter(note => note.deletedAt === null),
@@ -27,9 +34,10 @@ export function NotesScreen() {
 
   const activeCount = visibleNotes.filter(note => !note.isDone).length;
 
-  const handleAdd = () => {
-    addNote({title});
+  const handleAdd = async () => {
+    const nextTitle = title;
     setTitle('');
+    await addNote({title: nextTitle});
   };
 
   return (
@@ -37,19 +45,27 @@ export function NotesScreen() {
       <View style={styles.header}>
         <View>
           <Text style={styles.eyebrow}>NoteSync</Text>
-          <Text style={styles.title}>记事本</Text>
+          <Text style={styles.title}>Notes</Text>
         </View>
         <View style={styles.counter}>
           <Text style={styles.counterValue}>{activeCount}</Text>
-          <Text style={styles.counterLabel}>未完成</Text>
+          <Text style={styles.counterLabel}>active</Text>
         </View>
       </View>
+
+      <Text style={[styles.syncText, syncStatus === 'error' && styles.errorText]}>
+        {syncStatus === 'idle'
+          ? 'Cloud sync ready'
+          : syncStatus === 'syncing'
+            ? 'Syncing...'
+            : syncError}
+      </Text>
 
       <View style={styles.composer}>
         <TextInput
           value={title}
           onChangeText={setTitle}
-          placeholder="写下一条待办或备忘"
+          placeholder="Add a task or note"
           placeholderTextColor="#7a869a"
           returnKeyType="done"
           onSubmitEditing={handleAdd}
@@ -64,7 +80,7 @@ export function NotesScreen() {
             !title.trim() && styles.addButtonDisabled,
             pressed && styles.pressed,
           ]}>
-          <Text style={styles.addButtonText}>添加</Text>
+          <Text style={styles.addButtonText}>Add</Text>
         </Pressable>
       </View>
 
@@ -77,8 +93,10 @@ export function NotesScreen() {
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>还没有记事</Text>
-            <Text style={styles.emptyText}>先添加一条，后面我们让它同步到云端。</Text>
+            <Text style={styles.emptyTitle}>No notes yet</Text>
+            <Text style={styles.emptyText}>
+              Add one note, then sync it to Supabase.
+            </Text>
           </View>
         }
       />
@@ -120,7 +138,7 @@ function NoteRow({note, onToggle, onDelete}: NoteRowProps) {
         accessibilityRole="button"
         onPress={() => onDelete(note.id)}
         style={({pressed}) => [styles.deleteButton, pressed && styles.pressed]}>
-        <Text style={styles.deleteButtonText}>删除</Text>
+        <Text style={styles.deleteButtonText}>Delete</Text>
       </Pressable>
     </View>
   );
@@ -136,7 +154,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 18,
+    marginBottom: 10,
   },
   eyebrow: {
     color: '#4d6380',
@@ -148,6 +166,14 @@ const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: '800',
     marginTop: 2,
+  },
+  syncText: {
+    color: '#627087',
+    fontSize: 13,
+    marginBottom: 14,
+  },
+  errorText: {
+    color: '#b33f3f',
   },
   counter: {
     alignItems: 'center',
@@ -238,8 +264,8 @@ const styles = StyleSheet.create({
   },
   noteBody: {
     flex: 1,
-    minHeight: 38,
     justifyContent: 'center',
+    minHeight: 38,
   },
   noteTitle: {
     color: '#162033',

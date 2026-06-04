@@ -1,6 +1,6 @@
 module.exports = {
   preset: 'react-native',
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native|react-native-url-polyfill|react-native-safe-area-context)/)',
+    'node_modules/(?!((jest-)?react-native|@react-native|react-native-url-polyfill|react-native-safe-area-context|@react-native-async-storage)/)',
   ],
 };

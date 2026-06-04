@@ -1,4 +1,23 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+This is a React Native notes app for Android and Windows.
+
+## Supabase setup
+
+1. Create a Supabase project at https://supabase.com/dashboard.
+2. Open **Authentication > Sign In / Providers** and enable anonymous sign-ins.
+3. Open **SQL Editor** and run `supabase/migrations/001_create_notes.sql`.
+4. Open **Project Settings > API** and copy the project URL and anon public key.
+5. Paste them into `src/config/supabase.ts`:
+
+```ts
+export const supabaseConfig = {
+  url: 'https://your-project-ref.supabase.co',
+  anonKey: 'your-anon-public-key',
+};
+```
+
+After this, app startup creates or restores an anonymous Supabase session. Adding,
+completing, and deleting notes will upsert the local note state to the cloud
+`notes` table.
 
 # Getting Started
 
